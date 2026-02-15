@@ -13,6 +13,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+os.environ["OPENAI_API_KEY"] = "dummy"
 
 # ------------------------------------------------
 # FASTAPI INITIALIZATION
@@ -70,7 +71,7 @@ class AppointmentStatusUpdate(BaseModel):
 llm = ChatCohere(
     model="command-r-plus",
     temperature=0.3,
-    cohere_api_key=os.getenv("COHERE_API_KEY")
+    cohere_api_key=os.environ["COHERE_API_KEY"]
 )
 # ------------------------------------------------
 # UTILITY FUNCTIONS
