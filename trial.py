@@ -351,9 +351,38 @@ async def get_dashboard_stats():
 
 @app.get("/dashboard/data")
 async def get_dashboard_data():
-    doc = await workflow_collection.find_one({"vehicle_id": FIXED_VEHICLE_ID})
-    if not doc:
-        # return safe dummy data if DB is empty
+    try:
+        doc = await workflow_collection.find_one({"vehicle_id": FIXED_VEHICLE_ID})
+        if not doc:
+            # Return empty dashboard instead of crashing
+            return {
+                "telemetry": {},
+                "health_score": 100,
+                "component_health": {},
+                "predicted_issues": [],
+                "anomalies": [],
+                "diagnosis": "",
+                "customer_message": "No data available",
+                "schedule": "No appointment needed",
+                "feedback": "",
+                "last_updated": None
+            }
+
+        return {
+            "telemetry": doc.get("telemetry") or {},
+            "health_score": doc.get("overall_health_score") or 100,
+            "component_health": doc.get("component_health") or {},
+            "predicted_issues": doc.get("issues") or [],
+            "anomalies": doc.get("issues") or [],
+            "diagnosis": doc.get("diagnosis_summary") or "",
+            "customer_message": doc.get("customer_friendly_message") or "",
+            "schedule": doc.get("predicted_schedule") or "No appointment needed",
+            "feedback": doc.get("feedback") or "",
+            "last_updated": doc.get("last_updated")
+        }
+    except Exception as e:
+        # Log error on server, return safe response
+        print("Error in /dashboard/data:", e)
         return {
             "telemetry": {},
             "health_score": 100,
@@ -361,23 +390,12 @@ async def get_dashboard_data():
             "predicted_issues": [],
             "anomalies": [],
             "diagnosis": "",
-            "customer_message": "",
+            "customer_message": "Error fetching data",
             "schedule": "No appointment needed",
             "feedback": "",
             "last_updated": None
         }
-    return {
-        "telemetry": doc.get("telemetry", {}),
-        "health_score": doc.get("overall_health_score", 100),
-        "component_health": doc.get("component_health", {}),
-        "predicted_issues": doc.get("issues", []),
-        "anomalies": doc.get("issues", []),
-        "diagnosis": doc.get("diagnosis_summary", ""),
-        "customer_message": doc.get("customer_friendly_message", ""),
-        "schedule": doc.get("predicted_schedule", "No appointment needed"),
-        "feedback": doc.get("feedback", ""),
-        "last_updated": doc.get("last_updated")
-    }
+
 
 # ------------------------------------------------
 # APPOINTMENTS ENDPOINTS
