@@ -353,7 +353,19 @@ async def get_dashboard_stats():
 async def get_dashboard_data():
     doc = await workflow_collection.find_one({"vehicle_id": FIXED_VEHICLE_ID})
     if not doc:
-        return {"error": "No data found"}
+        # return safe dummy data if DB is empty
+        return {
+            "telemetry": {},
+            "health_score": 100,
+            "component_health": {},
+            "predicted_issues": [],
+            "anomalies": [],
+            "diagnosis": "",
+            "customer_message": "",
+            "schedule": "No appointment needed",
+            "feedback": "",
+            "last_updated": None
+        }
     return {
         "telemetry": doc.get("telemetry", {}),
         "health_score": doc.get("overall_health_score", 100),
