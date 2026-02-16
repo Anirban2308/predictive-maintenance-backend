@@ -10,6 +10,9 @@ import json
 import cohere
 from langchain_cohere import ChatCohere
 import os
+from bson import ObjectId
+from fastapi import HTTPException
+
 from dotenv import load_dotenv
 
 load_dotenv()
