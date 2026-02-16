@@ -303,34 +303,33 @@ async def run_maintenance(request: TelemetryRequest):
     # ------------------------------------------------
     # CREATE SINGLE MERGED APPOINTMENT
     # ------------------------------------------------
+   # ------------------------------------------------
+# CREATE OR UPDATE SINGLE ACTIVE APPOINTMENT
+# ------------------------------------------------
     if issues:
-        service_name = ", ".join(i["name"] for i in issues)
-        existing_appointment = await appointment_collection.find_one({
-            "vehicle_id": FIXED_VEHICLE_ID,
-            "date": schedule_text.split()[0],
-            "time": "10:00 AM",
-            "status": "Pending"
-        })
-        if not existing_appointment:
-            await appointment_collection.insert_one({
-                "vehicle_id": FIXED_VEHICLE_ID,
-                "service_type": service_name,
-                "date": schedule_text.split()[0],
-                "time": "10:00 AM",
-                "status": "Pending",
-                "recommended_by_ai": True,
-                "created_at": timestamp_now
-            })
+         service_name = ", ".join(i["name"] for i in issues)
 
-    return {
-        "issues": issues,
-        "anomalies": issues, 
-        "health_score": overall_health,
-        "diagnosis_summary": diagnosis_text,
-        "customer_message": customer_message,
-        "schedule": schedule_text,
-        "feedback": "Immediate maintenance recommended due to detected issues." if issues else "System operating normally."
-    }
+    await appointment_collection.update_one(
+        {
+            "vehicle_id": FIXED_VEHICLE_ID,
+            "status": {"$ne": "Resolved"}
+        },
+        {
+            "$set": {
+                "service_type": service_name,
+                "date": "Tomorrow",
+                "time": "10:00 AM",
+                "recommended_by_ai": True,
+                "updated_at": timestamp_now
+            },
+            "$setOnInsert": {
+                "vehicle_id": FIXED_VEHICLE_ID,
+                "status": "Pending",
+                "created_at": timestamp_now
+            }
+        },
+        upsert=True
+    )
 
 # ------------------------------------------------
 # DASHBOARD ENDPOINTS
